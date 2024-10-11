@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import Link from "next/link";
 
@@ -10,7 +10,8 @@ export default function Home() {
 
   const { register, handleSubmit, reset } = useForm();
 
-  async function fetchCategory() {
+  // Memoize fetchCategory with useCallback
+  const fetchCategory = useCallback(async () => {
     const data = await fetch(`${APIBASE}/category`);
     const c = await data.json();
     const c2 = c.map((category) => {
@@ -18,12 +19,12 @@ export default function Home() {
       return category;
     });
     setCategoryList(c2);
-  }
+  }, [APIBASE]);
 
   const startEdit = (category) => async () => {
     setEditMode(true);
     reset(category);
-  }
+  };
 
   const deleteById = (id) => async () => {
     if (!confirm("Are you sure?")) return;
@@ -32,16 +33,14 @@ export default function Home() {
       method: "DELETE",
     });
     fetchCategory();
-  }
-
+  };
 
   useEffect(() => {
     fetchCategory();
-  }, []);
+  }, [fetchCategory]);
 
-  function handleCategoryFormSubmit(data) {
+  const handleCategoryFormSubmit = (data) => {
     if (editMode) {
-      // data.id = data._id
       fetch(`${APIBASE}/category`, {
         method: "PUT",
         headers: {
@@ -49,11 +48,11 @@ export default function Home() {
         },
         body: JSON.stringify(data),
       }).then(() => {
-        reset({ name: '', order: '' })
-        setEditMode(false)
-        fetchCategory()
+        reset({ name: "", order: "" });
+        setEditMode(false);
+        fetchCategory();
       });
-      return
+      return;
     }
 
     fetch(`${APIBASE}/category`, {
@@ -63,17 +62,16 @@ export default function Home() {
       },
       body: JSON.stringify(data),
     }).then(() => {
-      reset({ name: '', order: '' })
-      setEditMode(false)
-      fetchCategory()
+      reset({ name: "", order: "" });
+      setEditMode(false);
+      fetchCategory();
     });
-  }
+  };
 
   return (
     <main>
       <div className="flex flex-row gap-4">
         <div className="flex-1 w-64 ">
-
           <form onSubmit={handleSubmit(handleCategoryFormSubmit)}>
             <div className="grid grid-cols-2 gap-4 w-fit m-4">
               <div>Category:</div>
@@ -95,45 +93,47 @@ export default function Home() {
                 />
               </div>
               <div className="col-span-2 text-right">
-                {editMode ?
+                {editMode ? (
                   <input
                     type="submit"
                     value="Update"
                     className="bg-blue-800 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full"
                   />
-
-                  :
+                ) : (
                   <input
                     type="submit"
                     value="Add"
                     className="bg-green-800 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-full"
                   />
-                }
-                {
-                  editMode &&
+                )}
+                {editMode && (
                   <button
                     onClick={() => {
-                      reset({ name: '', order: '' })
-                      setEditMode(false)
+                      reset({ name: "", order: "" });
+                      setEditMode(false);
                     }}
                     className="ml-2 bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-full"
-                  >Cancel</button>
-                }
+                  >
+                    Cancel
+                  </button>
+                )}
               </div>
             </div>
           </form>
         </div>
         <div className="border m-4 bg-slate-300 flex-1 w-64">
-
-
           <ul>
-            {categoryList.map((c) =>
+            {categoryList.map((c) => (
               <li key={c._id}>
-                <button className="border border-black p-1/2" onClick={startEdit(c)}>📝</button>{' '}
-                <button className="border border-black p-1/2" onClick={deleteById(c._id)}>❌</button>{' '}
+                <button className="border border-black p-1/2" onClick={startEdit(c)}>
+                  📝
+                </button>{" "}
+                <button className="border border-black p-1/2" onClick={deleteById(c._id)}>
+                  ❌
+                </button>{" "}
                 <Link href={`/category/${c._id}`}>{c.name}</Link> [{c.order}]
               </li>
-            )}
+            ))}
           </ul>
         </div>
       </div>

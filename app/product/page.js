@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 export default function Home() {
   const APIBASE = process.env.NEXT_PUBLIC_API_BASE;
@@ -15,7 +15,8 @@ export default function Home() {
     reset(product);
   };
 
-  async function fetchProducts() {
+  // Memoize fetchProducts with useCallback
+  const fetchProducts = useCallback(async () => {
     const data = await fetch(`${APIBASE}/product`);
     const p = await data.json();
     const p2 = p.map((product) => {
@@ -23,13 +24,14 @@ export default function Home() {
       return product;
     });
     setProducts(p2);
-  }
+  }, [APIBASE]);
 
-  async function fetchCategory() {
+  // Memoize fetchCategory with useCallback
+  const fetchCategory = useCallback(async () => {
     const data = await fetch(`${APIBASE}/category`);
     const c = await data.json();
     setCategory(c);
-  }
+  }, [APIBASE]);
 
   const createProductOrUpdate = async (data) => {
     if (editMode) {
@@ -70,7 +72,6 @@ export default function Home() {
         throw new Error(`Response status: ${response.status}`);
       }
 
-      // const json = await response.json();
       alert("Product added successfully");
 
       reset({
@@ -104,7 +105,7 @@ export default function Home() {
   useEffect(() => {
     fetchCategory();
     fetchProducts();
-  }, []);
+  }, [fetchCategory, fetchProducts]);
 
   return (
     <>
@@ -141,7 +142,7 @@ export default function Home() {
               <div>Price:</div>
               <div>
                 <input
-                  name="name"
+                  name="price"
                   type="number"
                   {...register("price", { required: true })}
                   className="border border-black w-full"

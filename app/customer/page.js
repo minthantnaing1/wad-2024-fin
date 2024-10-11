@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import Link from "next/link";
 
@@ -10,24 +10,19 @@ export default function CustomerPage() {
 
   const { register, handleSubmit, reset } = useForm();
 
-  // Fetch all customers
-  async function fetchCustomers() {
+  // Memoize fetchCustomers with useCallback
+  const fetchCustomers = useCallback(async () => {
     const data = await fetch(`${APIBASE}/customer`);
     const customers = await data.json();
     setCustomerList(customers);
-  }
+  }, [APIBASE]);
 
-  // Start editing a customer
   const startEdit = (customer) => async () => {
     setEditMode(true);
-    
-    // Ensure the Date of Birth is formatted correctly for the input field
     customer.dateOfBirth = new Date(customer.dateOfBirth).toISOString().split("T")[0];
-    
     reset(customer);
   };
 
-  // Delete a customer by ID
   const deleteById = (id) => async () => {
     if (!confirm("Are you sure you want to delete this customer?")) return;
 
@@ -39,15 +34,12 @@ export default function CustomerPage() {
 
   useEffect(() => {
     fetchCustomers();
-  }, []);
+  }, [fetchCustomers]);
 
-  // Handle form submission for both adding and updating customers
-  function handleCustomerFormSubmit(data) {
-    // Format Date of Birth to ISO format for saving
+  const handleCustomerFormSubmit = (data) => {
     data.dateOfBirth = new Date(data.dateOfBirth).toISOString();
 
     if (editMode) {
-      // Update existing customer
       fetch(`${APIBASE}/customer`, {
         method: "PUT",
         headers: {
@@ -62,7 +54,6 @@ export default function CustomerPage() {
       return;
     }
 
-    // Add new customer
     fetch(`${APIBASE}/customer`, {
       method: "POST",
       headers: {
@@ -73,7 +64,7 @@ export default function CustomerPage() {
       reset({ name: "", dateOfBirth: "", memberNumber: "", interests: "" });
       fetchCustomers();
     });
-  }
+  };
 
   return (
     <main>
